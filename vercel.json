@@ -1,0 +1,46 @@
+{
+  "name": "greybrain-ai-pulse",
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_GEMINI_API_KEY": "@vite_gemini_api_key",
+    "VITE_BREVO_API_KEY": "@vite_brevo_api_key",
+    "VITE_DISCORD_BOT_TOKEN": "@vite_discord_bot_token",
+    "VITE_DISCORD_GUILD_ID": "@vite_discord_guild_id",
+    "VITE_DISCORD_WEBHOOK_URL": "@vite_discord_webhook_url",
+    "VITE_DISCORD_SERVER_INVITE": "@vite_discord_server_invite"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "guildId": "1396856643689513122",
+  "channels": {
+    "INFORMATION": "1396862873531187395",
+    "GREYBRAIN AI PULSE TOPICS": "1396862879940218930",
+    "COMMUNITY": "1396862886403506263",
+    "welcome": "1396862892917264444",
+    "announcements": "1396862899401527368",
+    "community-guidelines": "1396862905785253959",
+    "llm-announcements": "1396862911850217625",
+    "productivity-hacks": "1396862918150328502",
+    "ai-tool-of-the-day": "1396862924466815057",
+    "deep-agents-tools": "1396862930607276193",
+    "academic-research": "1396862936668176424",
+    "healthcare-llm": "1396862943102238831",
+    "general-discussion": "1396862949573918852",
+    "introductions": "1396862955810979904",
+    "networking": "1396862962781655102",
+    "feedback": "1396862969094078534"
+  },
+  "roles": {
+    "Healthcare Professional": "1396862975381475461",
+    "Researcher": "1396862981983178894",
+    "AI Specialist": "1396862987796480071",
+    "Student": "1396862994511564850",
+    "Industry": "1396863000979177632",
+    "Moderator": "1396863007199330304"
+  },
+  "webhookUrl": "https://discord.com/api/webhooks/1396863018280681644/bTV65wv-ZwjfNgVvoRK1w3Z849BibASopB8bTWa-XwQN0uzjkiv7qVoa-eItxqN4hszx",
+  "setupDate": "2025-07-21T14:34:56.292Z"
+}

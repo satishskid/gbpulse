@@ -1,0 +1,25 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "newsletters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "subscribers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "subscribedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

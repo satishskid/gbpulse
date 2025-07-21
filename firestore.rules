@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Newsletter data - read only for public
+    match /newsletters/{document} {
+      allow read: if true;
+      allow write: if false; // Only server-side writes
+    }
+    
+    // Subscriber data - write only for subscriptions
+    match /subscribers/{document} {
+      allow read: if false; // Private data
+      allow create: if true; // Allow new subscriptions
+      allow update, delete: if false;
+    }
+    
+    // Analytics data - read only
+    match /analytics/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    // Discord community data - read only
+    match /discord/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
