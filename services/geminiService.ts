@@ -1,9 +1,36 @@
 
 import { GoogleGenAI } from "@google/genai";
 import type { NewsletterData, NewsletterSectionData } from '../types';
+import { cacheService } from './cacheService';
+import { APIRetryService } from './apiRetryService';
 
 // Initialize the Gemini client. Uses Vite environment variable.
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+
+// Rate limiting
+class RateLimiter {
+  private requests: number[] = [];
+  private readonly maxRequests = 50; // Gemini API limit
+  private readonly windowMs = 60 * 1000; // 1 minute
+
+  async checkLimit(): Promise<void> {
+    const now = Date.now();
+    // Remove old requests outside the window
+    this.requests = this.requests.filter(time => now - time < this.windowMs);
+    
+    if (this.requests.length >= this.maxRequests) {
+      const oldestRequest = Math.min(...this.requests);
+      const waitTime = this.windowMs - (now - oldestRequest) + 100; // Add small buffer
+      console.log(`Rate limit reached. Waiting ${waitTime}ms...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      return this.checkLimit(); // Recheck after waiting
+    }
+    
+    this.requests.push(now);
+  }
+}
+
+const rateLimiter = new RateLimiter();
 
 const PROMPT = `
 You are an AI assistant for GreyBrain AI, generating a curated newsletter called "GreyBrain AI Pulse" on Large Language Models (LLMs) and healthcare.
@@ -152,14 +179,35 @@ const tryParseAndHeal = async (jsonStringToParse: string, originalResult: any): 
 
 export const fetchNewsletterContent = async (): Promise<NewsletterData> => {
   try {
-    const model = 'gemini-2.5-flash';
-    const result = await ai.models.generateContent({
-      model: model,
-      contents: PROMPT,
-      config: {
-        tools: [{ googleSearch: {} }],
+    // Check cache first
+    const cached = cacheService.getNewsletterData();
+    if (cached) {
+      console.log('📋 Returning cached newsletter data');
+      return cached;
+    }
+
+    console.log('🤖 Generating fresh newsletter content...');
+    
+    // Rate limiting check
+    await rateLimiter.checkLimit();
+
+    const result = await APIRetryService.execute(
+      async () => {
+        const model = 'gemini-2.5-flash';
+        return await ai.models.generateContent({
+          model: model,
+          contents: PROMPT,
+          config: {
+            tools: [{ googleSearch: {} }],
+          }
+        });
+      },
+      {
+        serviceName: 'Gemini API',
+        maxAttempts: 2, // Reduce attempts to save API costs
+        timeoutMs: 45000 // 45 second timeout
       }
-    });
+    );
 
     // Handle cases where the prompt itself might be blocked
     if (!result.candidates || result.candidates.length === 0) {
@@ -171,7 +219,7 @@ export const fetchNewsletterContent = async (): Promise<NewsletterData> => {
       if (blockReason) {
         errorMessage = `The request was blocked. Reason: ${blockReason}.`;
         if (safetyRatings && safetyRatings.length > 0) {
-          const ratingDetails = safetyRatings.map(r => `${r.category.replace('HARM_CATEGORY_', '')}: ${r.probability}`).join(', ');
+          const ratingDetails = safetyRatings.map((r: any) => `${r.category?.replace('HARM_CATEGORY_', '') || 'Unknown'}: ${r.probability}`).join(', ');
           errorMessage += ` Details: ${ratingDetails}`;
         }
       }
@@ -191,7 +239,7 @@ export const fetchNewsletterContent = async (): Promise<NewsletterData> => {
         if (finishReason && finishReason !== 'STOP') {
             errorMessage = `The AI response was incomplete. Reason: ${finishReason}.`;
              if (safetyRatings && safetyRatings.length > 0) {
-                const ratingDetails = safetyRatings.map(r => `${r.category.replace('HARM_CATEGORY_', '')}: ${r.probability}`).join(', ');
+                const ratingDetails = safetyRatings.map((r: any) => `${r.category?.replace('HARM_CATEGORY_', '') || 'Unknown'}: ${r.probability}`).join(', ');
                 errorMessage += ` Details: ${ratingDetails}`;
             }
         }
@@ -204,8 +252,13 @@ export const fetchNewsletterContent = async (): Promise<NewsletterData> => {
         throw new Error("Failed to find a valid JSON object in the AI response.");
     }
 
-    // Call the new parse-and-heal function
-    return await tryParseAndHeal(jsonString, result);
+    // Call the parse-and-heal function
+    const newsletterData = await tryParseAndHeal(jsonString, result);
+    
+    // Cache the successful result
+    cacheService.setNewsletterData(newsletterData);
+    
+    return newsletterData;
 
   } catch (error) {
     console.error("Error in fetchNewsletterContent:", error);

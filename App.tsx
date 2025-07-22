@@ -2,23 +2,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { NewsletterData, NewsletterSectionData, NewsletterItem, GroundingSource } from './types';
 import { fetchNewsletterContent } from './services/geminiService';
+import { cacheService } from './services/cacheService';
+import { URLValidationService } from './services/urlValidationService';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorDisplay from './components/ErrorDisplay';
 import SourceWordCloud from './components/SourceWordCloud';
 import SubscriptionForm from './components/SubscriptionForm';
 import RSSFeedManager from './components/RSSFeedManager';
 import DiscordCommunity from './components/DiscordCommunity';
-import { app, analytics } from './firebase';
-import { generateRSSFeed, generateWeeklyDigest } from './services/rssService';
+import EnhancedNewsletterItemCard from './components/EnhancedNewsletterItemCard';
+import PerformanceMonitoringDashboard from './components/PerformanceMonitoringDashboard';
 import { sendNewsletterToChannel } from './services/discordService';
 
 // --- Reusable Icon Components ---
-const LinkIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-  </svg>
-);
-
 const BookmarkIcon: React.FC<{ className?: string, isFilled?: boolean }> = ({ className, isFilled }) => {
   if (isFilled) {
     return (
@@ -64,69 +60,6 @@ const GreyBrainLogo: React.FC<{ className?: string }> = ({ className }) => (
 
 
 // --- Child Components ---
-const NewsletterItemCard: React.FC<{ item: NewsletterItem, onBookmarkToggle: (item: NewsletterItem) => void, isBookmarked: boolean }> = ({ item, onBookmarkToggle, isBookmarked }) => {
-    const [imgSrc, setImgSrc] = useState(item.imageUrl || '');
-    const [imgError, setImgError] = useState(false);
-
-    useEffect(() => {
-        setImgSrc(item.imageUrl || '');
-        setImgError(false);
-    }, [item.imageUrl]);
-
-    const handleImageError = () => {
-        setImgError(true);
-    };
-
-    const handleBookmarkClick = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onBookmarkToggle(item);
-    }
-    
-    const hasImage = imgSrc && !imgError;
-
-    return (
-        <a 
-          href={item.sourceUrl} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-cyan-500/30 hover:-translate-y-1 transition-all duration-300 flex flex-col group"
-        >
-             <div className="relative">
-                {hasImage && (
-                    <div className="relative h-40 w-full overflow-hidden">
-                        <img 
-                            src={imgSrc} 
-                            alt={`${item.title} thumbnail`} 
-                            onError={handleImageError} 
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                    </div>
-                )}
-                <button 
-                    onClick={handleBookmarkClick} 
-                    aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-                    className="absolute top-2 right-2 z-10 p-2 bg-black/50 rounded-full text-white hover:text-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition-colors"
-                >
-                    <BookmarkIcon className="w-5 h-5" isFilled={isBookmarked} />
-                </button>
-            </div>
-            <div className={`p-5 flex flex-col flex-grow ${!hasImage ? 'pt-5' : ''}`}>
-                <div className="flex items-center text-gray-400 text-sm mb-2">
-                    <SourceIcon type={item.sourceType} />
-                    <span>{item.sourceType}</span>
-                </div>
-                <h3 className="text-lg font-bold text-gray-100 mb-2 flex-grow">{item.title}</h3>
-                <p className="text-gray-400 text-sm mb-4">{item.summary}</p>
-                 <div className="mt-auto flex justify-end items-center text-cyan-400 text-sm font-semibold">
-                    Read More
-                    <LinkIcon className="w-4 h-4 ml-2" />
-                </div>
-            </div>
-        </a>
-    );
-};
-
 const BookmarksPanel: React.FC<{ isOpen: boolean, onClose: () => void, bookmarks: NewsletterItem[], onRemoveBookmark: (item: NewsletterItem) => void }> = ({ isOpen, onClose, bookmarks, onRemoveBookmark }) => {
     return (
         <div className={`fixed inset-0 z-50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
@@ -206,6 +139,7 @@ const App: React.FC = () => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [bookmarks, setBookmarks] = useState<NewsletterItem[]>([]);
   const [isBookmarksPanelOpen, setIsBookmarksPanelOpen] = useState(false);
+  const [showPerformancePanel, setShowPerformancePanel] = useState(false);
 
   const REFRESH_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -238,13 +172,40 @@ const App: React.FC = () => {
   const isBookmarked = (itemId: string) => bookmarks.some(b => b.id === itemId);
 
   const fetchData = useCallback(async () => {
-    console.log("Fetching new data...");
+    console.log("Fetching data...");
     setLoading(true);
     setError(null);
+    
     try {
+      // Check cache first
+      const cachedData = cacheService.getNewsletterData();
+      if (cachedData) {
+        console.log('📋 Using cached newsletter data');
+        setNewsletterData(cachedData);
+        setLastUpdated(new Date());
+        setLoading(false);
+        
+        // Validate URLs in background
+        if (cachedData.newsletter) {
+          URLValidationService.validateNewsletterUrls(cachedData.newsletter);
+        }
+        
+        return;
+      }
+
+      // Fetch fresh data
+      console.log("🤖 Generating fresh newsletter content...");
       const data = await fetchNewsletterContent();
       setNewsletterData(data);
       setLastUpdated(new Date());
+
+      // Cache the fresh data
+      cacheService.setNewsletterData(data);
+
+      // Validate URLs
+      if (data.newsletter) {
+        URLValidationService.validateNewsletterUrls(data.newsletter);
+      }
 
       // Automatic posting to Discord
       await autoPostNewsletter(data);
@@ -316,7 +277,18 @@ const App: React.FC = () => {
               </div>
             )}
           </div>
-          <div className="flex-1 flex justify-end min-w-[150px]">
+          <div className="flex-1 flex justify-end items-center gap-3 min-w-[150px]">
+            {/* Performance Monitoring Toggle (Development) */}
+            <button 
+                onClick={() => setShowPerformancePanel(!showPerformancePanel)} 
+                className="bg-gray-800/80 text-white py-2 px-3 rounded-lg hover:bg-gray-700 transition-colors duration-300 flex items-center"
+                title="Performance Metrics"
+            >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+            </button>
+            
             <button 
                 onClick={() => setIsBookmarksPanelOpen(true)} 
                 className="relative bg-gray-800/80 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors duration-300 flex items-center gap-2"
@@ -342,7 +314,7 @@ const App: React.FC = () => {
                 <h2 className="text-3xl font-bold text-white mb-6 border-l-4 border-cyan-500 pl-4">{section.categoryTitle}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {section.items.map((item) => (
-                    <NewsletterItemCard 
+                    <EnhancedNewsletterItemCard 
                         key={item.id} 
                         item={item} 
                         isBookmarked={isBookmarked(item.id)}
@@ -367,6 +339,13 @@ const App: React.FC = () => {
           onRemoveBookmark={handleToggleBookmark}
       />
       <RSSFeedManager newsletterData={newsletterData} />
+      
+      {/* Performance Monitoring Dashboard */}
+      {showPerformancePanel && (
+        <PerformanceMonitoringDashboard 
+          onClose={() => setShowPerformancePanel(false)}
+        />
+      )}
     </div>
   );
 };
