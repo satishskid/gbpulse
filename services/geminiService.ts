@@ -135,11 +135,10 @@ const tryParseAndHeal = async (jsonStringToParse: string, originalResult: any): 
             // Self-healing attempt
             const repairPrompt = `The following JSON string is invalid. Please fix it and return only the corrected JSON object. Do not add any commentary or markdown formatting. Broken JSON: ${jsonStringToParse}`;
             
-            try {
-                const repairResult = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
-                    contents: repairPrompt,
-                });
+            try {            const repairResult = await ai.models.generateContent({
+                model: 'gemini-1.5-flash',
+                contents: repairPrompt,
+            });
                 const repairedText = repairResult.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!repairedText) {
                     throw new Error("AI repair attempt returned no text.");
@@ -193,7 +192,7 @@ export const fetchNewsletterContent = async (): Promise<NewsletterData> => {
 
     const result = await APIRetryService.execute(
       async () => {
-        const model = 'gemini-2.5-flash';
+        const model = 'gemini-1.5-flash';
         return await ai.models.generateContent({
           model: model,
           contents: PROMPT,
