@@ -18,8 +18,8 @@ This manual provides comprehensive technical documentation for developers workin
          ▼                       ▼                       ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Hosting       │    │   Database      │    │   Integrations  │
-│   Firebase      │    │   Firestore     │    │   Discord/      │
-│   + CDN         │    │   + Rules       │    │   Telegram      │
+│   Firebase      │    │   Firestore     │    │   Discord       │
+│   + CDN         │    │   + Rules       │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -34,7 +34,7 @@ This manual provides comprehensive technical documentation for developers workin
 | **Database** | Firestore | NoSQL document database |
 | **Hosting** | Firebase Hosting | Static site hosting + CDN |
 | **AI/ML** | Google Gemini API | Content generation |
-| **Communication** | Discord/Telegram APIs | Multi-platform distribution |
+| **Communication** | Discord APIs | Multi-platform distribution |
 | **Analytics** | Firebase Analytics | Usage tracking |
 
 ## 🚀 Development Setup
@@ -83,10 +83,6 @@ VITE_DISCORD_WEBHOOK_URL=your_webhook_url
 VITE_DISCORD_CHANNEL_GENERAL=channel_id
 VITE_DISCORD_CHANNEL_HEALTH=channel_id
 
-# Telegram Integration
-VITE_TELEGRAM_BOT_TOKEN=bot_token
-VITE_TELEGRAM_CHANNEL_MAIN=@channel_name
-
 # Development
 VITE_DEV_MODE=true
 VITE_LOG_LEVEL=debug
@@ -129,7 +125,6 @@ npm run deploy             # Deploy to Firebase
 npm run deploy:staging     # Deploy to staging environment
 
 # Bot Setup
-npm run setup-bot          # Configure Telegram bot
 npm run setup-discord      # Configure Discord integration
 ```
 
@@ -149,14 +144,11 @@ greybrain-ai-pulse/
 │   ├── discordService.ts      # Discord API wrapper
 │   ├── geminiService.ts       # AI content generation
 │   ├── rssService.ts          # RSS feed processing
-│   ├── telegramService.ts     # Telegram bot service
 │   └── weeklyDigestService.ts # Newsletter compilation
 ├── scripts/                    # Automation and setup scripts
 │   ├── discord-setup.js       # Discord configuration
 │   ├── quick-setup.js         # Quick project setup
 │   ├── setup-discord.sh       # Discord shell script
-│   ├── setup-telegram-bot.js  # Telegram bot setup
-│   ├── setup-telegram.js      # Telegram configuration
 │   └── test-discord-channels.js # Discord testing
 ├── dist/                       # Production build output
 ├── firebase.json              # Firebase configuration
@@ -322,25 +314,6 @@ export const sendToDiscord = async (content: string, webhookUrl: string) => {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
-  });
-
-  return response.ok;
-};
-```
-
-### Telegram Bot Integration
-
-```typescript
-// services/telegramService.ts
-export const sendTelegramMessage = async (chatId: string, text: string) => {
-  const response = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      parse_mode: 'HTML'
-    })
   });
 
   return response.ok;
@@ -540,9 +513,6 @@ firebase use --add
 
 #### API Integration Problems
 ```bash
-# Test API endpoints
-curl -X POST "https://api.telegram.org/bot<TOKEN>/getMe"
-
 # Check environment variables
 echo $VITE_GEMINI_API_KEY
 ```
@@ -607,11 +577,6 @@ class BookmarkService {
 - **Endpoint**: Webhook URLs
 - **Rate Limits**: 30 requests/minute per webhook
 - **Authentication**: Webhook URL
-
-#### Telegram API
-- **Endpoint**: https://api.telegram.org/bot{token}
-- **Rate Limits**: 30 messages/second
-- **Authentication**: Bot Token
 
 ## 🤝 Contributing
 

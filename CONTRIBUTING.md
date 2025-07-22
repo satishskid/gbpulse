@@ -76,7 +76,7 @@ type(scope): description
 
 **Examples:**
 ```
-feat(telegram): add bot command for newsletter categories
+feat(discord): add bot command for newsletter categories
 fix(ui): resolve mobile responsive issues in header
 docs(readme): update installation instructions
 test(gemini): add unit tests for content generation
@@ -220,12 +220,12 @@ Any other context, mockups, or examples.
 ```typescript
 // Example unit test
 import { describe, it, expect } from 'vitest';
-import { formatNewsletterForTelegram } from '../services/telegramService';
+import { formatNewsletterItemForDiscord } from '../services/discordService';
 
-describe('TelegramService', () => {
+describe('DiscordService', () => {
   it('should format newsletter content correctly', () => {
     const mockData = { /* test data */ };
-    const result = formatNewsletterForTelegram(mockData);
+    const result = formatNewsletterItemForDiscord(mockData);
     
     expect(result).toContain('GreyBrain AI Pulse');
     expect(result).toMatch(/\d{4}-\d{2}-\d{2}/); // Date format

@@ -10,8 +10,7 @@ import RSSFeedManager from './components/RSSFeedManager';
 import DiscordCommunity from './components/DiscordCommunity';
 import { app, analytics } from './firebase';
 import { generateRSSFeed, generateWeeklyDigest } from './services/rssService';
-import { sendNewsletterToChannels } from './services/discordService';
-import { sendNewsletterToTelegram } from './services/telegramService';
+import { sendNewsletterToChannel } from './services/discordService';
 
 // --- Reusable Icon Components ---
 const LinkIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -247,7 +246,7 @@ const App: React.FC = () => {
       setNewsletterData(data);
       setLastUpdated(new Date());
 
-      // Automatic posting to Discord and Telegram
+      // Automatic posting to Discord
       await autoPostNewsletter(data);
 
     } catch (err: unknown) {
@@ -266,36 +265,20 @@ const App: React.FC = () => {
     try {
       console.log("🤖 Auto-posting newsletter to social platforms...");
 
-      // Post to Discord channels
+      // Post to Discord channel
       const discordBotToken = import.meta.env.VITE_DISCORD_BOT_TOKEN;
-      const discordGuildId = import.meta.env.VITE_DISCORD_GUILD_ID;
+      const discordChannelId = import.meta.env.VITE_DISCORD_CHANNEL_GENERAL;
 
-      if (discordBotToken && discordGuildId) {
-        console.log("📤 Posting to Discord channels...");
-        const discordSuccess = await sendNewsletterToChannels(data, discordBotToken, discordGuildId);
+      if (discordBotToken && discordChannelId) {
+        console.log("📤 Posting to Discord channel...");
+        const discordSuccess = await sendNewsletterToChannel(data, discordBotToken, discordChannelId);
         if (discordSuccess) {
-          console.log("✅ Successfully posted to Discord channels");
+          console.log("✅ Successfully posted to Discord channel");
         } else {
-          console.warn("⚠️ Failed to post to Discord channels");
+          console.warn("⚠️ Failed to post to Discord channel");
         }
       } else {
         console.warn("⚠️ Discord credentials not configured");
-      }
-
-      // Post to Telegram
-      const telegramBotToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-      const telegramChatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
-
-      if (telegramBotToken && telegramChatId) {
-        console.log("📤 Posting to Telegram...");
-        const telegramSuccess = await sendNewsletterToTelegram(data);
-        if (telegramSuccess) {
-          console.log("✅ Successfully posted to Telegram");
-        } else {
-          console.warn("⚠️ Failed to post to Telegram");
-        }
-      } else {
-        console.warn("⚠️ Telegram credentials not configured");
       }
 
     } catch (error) {

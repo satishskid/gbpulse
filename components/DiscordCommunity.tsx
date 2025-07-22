@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { NewsletterData, NewsletterItem } from '../types';
-import { sendArticleForDiscussion, getDiscordInviteLink, sendNewsletterToChannels } from '../services/discordService';
+import { sendArticleForDiscussion, getDiscordInviteLink, sendNewsletterToChannel } from '../services/discordService';
 
 interface DiscordCommunityProps {
   newsletterData?: NewsletterData | null;
@@ -10,7 +10,7 @@ interface DiscordCommunityProps {
 const DiscordCommunity: React.FC<DiscordCommunityProps> = ({ newsletterData, className = '' }) => {
   const [showCommunityModal, setShowCommunityModal] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<{ item: NewsletterItem; category: string } | null>(null);
-  const [isPostingToChannels, setIsPostingToChannels] = useState(false);
+  const [isPostingToChannel, setIsPostingToChannel] = useState(false);
   const [postingStatus, setPostingStatus] = useState<string | null>(null);
 
   const handleJoinDiscord = () => {
@@ -29,35 +29,35 @@ const DiscordCommunity: React.FC<DiscordCommunityProps> = ({ newsletterData, cla
     handleJoinDiscord();
   };
 
-  const handlePostToChannels = async () => {
+  const handlePostToChannel = async () => {
     if (!newsletterData) return;
 
-    setIsPostingToChannels(true);
-    setPostingStatus('Posting newsletter to Discord channels...');
+    setIsPostingToChannel(true);
+    setPostingStatus('Posting newsletter to Discord channel...');
 
     try {
       const botToken = import.meta.env.VITE_DISCORD_BOT_TOKEN;
-      const guildId = import.meta.env.VITE_DISCORD_GUILD_ID;
+      const channelId = import.meta.env.VITE_DISCORD_CHANNEL_GENERAL;
 
-      if (!botToken || !guildId) {
-        throw new Error('Discord bot token or guild ID not configured');
+      if (!botToken || !channelId) {
+        throw new Error('Discord bot token or channel ID not configured');
       }
 
-      const success = await sendNewsletterToChannels(newsletterData, botToken, guildId);
+      const success = await sendNewsletterToChannel(newsletterData, botToken, channelId);
 
       if (success) {
-        setPostingStatus('✅ Newsletter posted successfully to all channels!');
+        setPostingStatus('✅ Newsletter posted successfully to the channel!');
         setTimeout(() => setPostingStatus(null), 5000);
       } else {
-        setPostingStatus('❌ Failed to post newsletter to channels');
+        setPostingStatus('❌ Failed to post newsletter to the channel');
         setTimeout(() => setPostingStatus(null), 5000);
       }
     } catch (error) {
-      console.error('Error posting to channels:', error);
-      setPostingStatus('❌ Error posting to channels');
+      console.error('Error posting to channel:', error);
+      setPostingStatus('❌ Error posting to channel');
       setTimeout(() => setPostingStatus(null), 5000);
     } finally {
-      setIsPostingToChannels(false);
+      setIsPostingToChannel(false);
     }
   };
 
@@ -130,11 +130,11 @@ const DiscordCommunity: React.FC<DiscordCommunityProps> = ({ newsletterData, cla
             </button>
 
             <button
-              onClick={handlePostToChannels}
-              disabled={isPostingToChannels || !newsletterData}
+              onClick={handlePostToChannel}
+              disabled={isPostingToChannel || !newsletterData}
               className="inline-flex items-center bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300 shadow-lg shadow-cyan-600/20"
             >
-              {isPostingToChannels ? (
+              {isPostingToChannel ? (
                 <>
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -147,7 +147,7 @@ const DiscordCommunity: React.FC<DiscordCommunityProps> = ({ newsletterData, cla
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                   </svg>
-                  Post to Discord Channels
+                  Post to Discord Channel
                 </>
               )}
             </button>

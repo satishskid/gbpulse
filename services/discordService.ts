@@ -120,24 +120,12 @@ export const formatNewsletterItemForDiscord = (item: NewsletterItem, category: s
 };
 
 /**
- * Map newsletter categories to Discord channel names
+ * Send newsletter content to a single Discord channel
  */
-const CATEGORY_TO_CHANNEL_MAP: Record<string, string> = {
-  'New LLM Announcements & Releases': 'llm-announcements',
-  'LLM Productivity Hacks & Tips': 'productivity-hacks',
-  'AI Tool/Tip of the Day': 'ai-tool-of-the-day',
-  'Emerging Deep Agents & AI Tools': 'deep-agents-tools',
-  'Academic Research & Papers': 'academic-research',
-  'Healthcare LLM Advancements': 'healthcare-llm'
-};
-
-/**
- * Send newsletter content to specific Discord channels based on category
- */
-export const sendNewsletterToChannels = async (
+export const sendNewsletterToChannel = async (
   newsletterData: NewsletterData,
   botToken: string,
-  guildId: string
+  channelId: string
 ): Promise<boolean> => {
   try {
     const now = new Date();
@@ -148,55 +136,24 @@ export const sendNewsletterToChannels = async (
       day: 'numeric'
     });
 
-    // Get all channels in the guild
-    const channelsResponse = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
+    // Send header message
+    const headerMessage = {
+      content: `🧠 **GreyBrain AI Pulse** - ${dateStr}`,
+      username: 'GreyBrain AI Pulse',
+      avatar_url: 'https://via.placeholder.com/128x128/06b6d4/ffffff?text=GB',
+    };
+
+    await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      method: 'POST',
       headers: {
         'Authorization': `Bot ${botToken}`,
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify(headerMessage)
     });
 
-    if (!channelsResponse.ok) {
-      throw new Error(`Failed to fetch channels: ${channelsResponse.statusText}`);
-    }
-
-    const channels = await channelsResponse.json();
-    const channelMap = new Map();
-
-    // Create a map of channel names to IDs
-    channels.forEach((channel: any) => {
-      if (channel.type === 0) { // Text channels only
-        channelMap.set(channel.name, channel.id);
-      }
-    });
-
-    // Send content to each appropriate channel
+    // Send each item in the newsletter
     for (const section of newsletterData.newsletter) {
-      const channelName = CATEGORY_TO_CHANNEL_MAP[section.categoryTitle];
-      const channelId = channelMap.get(channelName);
-
-      if (!channelId) {
-        console.warn(`Channel not found for category: ${section.categoryTitle} (looking for: ${channelName})`);
-        continue;
-      }
-
-      // Send section header
-      const headerMessage = {
-        content: `🧠 **GreyBrain AI Pulse** - ${dateStr}\n📋 **${section.categoryTitle}**\n`,
-        username: 'GreyBrain AI Pulse',
-        avatar_url: 'https://via.placeholder.com/128x128/06b6d4/ffffff?text=GB',
-      };
-
-      await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bot ${botToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(headerMessage)
-      });
-
-      // Send each item in the section
       for (const item of section.items) {
         const embed = formatNewsletterItemForDiscord(item, section.categoryTitle);
 
@@ -222,84 +179,7 @@ export const sendNewsletterToChannels = async (
 
     return true;
   } catch (error) {
-    console.error('Error sending newsletter to Discord channels:', error);
-    return false;
-  }
-};
-
-/**
- * Send newsletter digest to Discord (legacy webhook method)
- */
-export const sendNewsletterDigestToDiscord = async (
-  newsletterData: NewsletterData,
-  maxItemsPerSection: number = 2
-): Promise<boolean> => {
-  try {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-
-    // Send header message
-    const headerMessage: DiscordMessage = {
-      content: `🧠 **GreyBrain AI Pulse** - ${dateStr}\n*Your daily dose of AI healthcare intelligence*\n\n📊 **Today's Highlights:**`,
-      username: 'GreyBrain AI Pulse',
-      avatar_url: 'https://via.placeholder.com/128x128/06b6d4/ffffff?text=GB',
-    };
-
-    await sendDiscordMessage(headerMessage);
-
-    // Send each section with limited items
-    for (const section of newsletterData.newsletter) {
-      const itemsToShow = section.items.slice(0, maxItemsPerSection);
-      
-      for (const item of itemsToShow) {
-        const embed = formatNewsletterItemForDiscord(item, section.categoryTitle);
-        
-        const message: DiscordMessage = {
-          embeds: [embed],
-          username: 'GreyBrain AI Pulse',
-          avatar_url: 'https://via.placeholder.com/128x128/06b6d4/ffffff?text=GB',
-        };
-
-        await sendDiscordMessage(message);
-        
-        // Small delay between messages to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-
-      // Show remaining count if there are more items
-      if (section.items.length > maxItemsPerSection) {
-        const remaining = section.items.length - maxItemsPerSection;
-        const remainingMessage: DiscordMessage = {
-          content: `*... and ${remaining} more article${remaining > 1 ? 's' : ''} in ${section.categoryTitle}*\n\n🌐 [View all updates on GreyBrain AI Pulse](http://localhost:3700/)`,
-          username: 'GreyBrain AI Pulse',
-        };
-        await sendDiscordMessage(remainingMessage);
-      }
-    }
-
-    // Send footer with links
-    const footerMessage: DiscordMessage = {
-      embeds: [{
-        title: '🔗 Quick Links',
-        description: '• [View Full Newsletter](http://localhost:3700/)\n• [Subscribe for Updates](http://localhost:3700/)\n• [Join Our Community](https://discord.gg/greybrain-ai-pulse)',
-        color: 0x06b6d4,
-        footer: {
-          text: `Powered by GreyBrain AI • ${newsletterData.groundingSources?.length || 0} sources analyzed`,
-        },
-      }],
-      username: 'GreyBrain AI Pulse',
-    };
-
-    await sendDiscordMessage(footerMessage);
-
-    return true;
-  } catch (error) {
-    console.error('Error sending newsletter digest to Discord:', error);
+    console.error('Error sending newsletter to Discord channel:', error);
     return false;
   }
 };
@@ -386,7 +266,7 @@ export const getDiscordInviteLink = (): string => {
 export default {
   sendDiscordMessage,
   formatNewsletterItemForDiscord,
-  sendNewsletterDigestToDiscord,
+  sendNewsletterToChannel,
   sendArticleForDiscussion,
   sendWelcomeMessage,
   getDiscordInviteLink,

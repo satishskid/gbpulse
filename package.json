@@ -10,8 +10,6 @@
     "setup-discord": "bash scripts/setup-discord.sh",
     "quick-discord": "node scripts/quick-setup.js",
     "test-discord": "node scripts/test-discord-channels.js",
-    "setup-telegram": "node scripts/setup-telegram.js",
-    "setup-bot": "node scripts/setup-telegram-bot.js",
     "deploy": "bash deploy-firebase.sh",
     "firebase:deploy": "firebase deploy --only hosting",
     "firebase:serve": "firebase serve --only hosting"

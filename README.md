@@ -3,7 +3,6 @@
 > **The Ultimate AI-Powered Newsletter Platform for LLM Health Insights**
 
 [![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen)](https://llm-healthcare-insights.web.app)
-[![Telegram Bot](https://img.shields.io/badge/Telegram-Bot-blue)](https://t.me/GreyBrainPulseBot)
 [![Firebase](https://img.shields.io/badge/Powered%20by-Firebase-orange)](https://firebase.google.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -14,12 +13,11 @@ GreyBrain AI Pulse is a cutting-edge newsletter platform that delivers curated i
 ### 🎯 Key Features
 
 - 🤖 **AI-Powered Content Generation** - Automated newsletter creation using Google Gemini
-- 📧 **Multi-Platform Distribution** - Email, Discord, and Telegram integration
+- 📧 **Multi-Platform Distribution** - Email and Discord integration
 - 📊 **Real-time Analytics** - Track engagement and performance metrics
 - 📱 **Responsive Design** - Seamless experience across all devices
 - 🔥 **Firebase Integration** - Scalable backend with real-time database
 - 🚀 **One-Click Deployment** - Automated deployment to Firebase Hosting
-- 🤖 **Telegram Bot** - Interactive bot for community engagement
 - 💬 **Discord Integration** - Automated posting to Discord channels
 - 🔍 **Source Transparency** - Full list of sources and visual word cloud
 - 📚 **Bookmark System** - Save articles for later viewing
@@ -28,7 +26,6 @@ GreyBrain AI Pulse is a cutting-edge newsletter platform that delivers curated i
 ## 🚀 Live Demo
 
 - **Website**: [https://llm-healthcare-insights.web.app](https://llm-healthcare-insights.web.app)
-- **Telegram Bot**: [@GreyBrainPulseBot](https://t.me/GreyBrainPulseBot)
 
 ## 🛠 Tech Stack
 
@@ -38,7 +35,7 @@ GreyBrain AI Pulse is a cutting-edge newsletter platform that delivers curated i
 | **Styling** | Tailwind CSS + Custom Components |
 | **Backend** | Firebase (Firestore, Hosting, Analytics) |
 | **AI/ML** | Google Gemini API |
-| **Communication** | Discord API, Telegram Bot API |
+| **Communication** | Discord API |
 | **Deployment** | Firebase Hosting + GitHub Actions |
 | **Analytics** | Firebase Analytics + Custom Metrics |
 
@@ -90,11 +87,6 @@ VITE_FIREBASE_PROJECT_ID=llm-healthcare-insights
 # Discord Integration
 VITE_DISCORD_WEBHOOK_URL=your_discord_webhook_url
 VITE_DISCORD_CHANNEL_GENERAL=your_general_channel_id
-VITE_DISCORD_CHANNEL_HEALTH=your_health_channel_id
-
-# Telegram Integration
-VITE_TELEGRAM_BOT_TOKEN=8010638207:AAFfbXNgD9Y8AFJ1FTcv_IhJeLZ0EvZk9EA
-VITE_TELEGRAM_CHANNEL_MAIN=@greybrain_pulse
 
 # Email Configuration (optional)
 VITE_EMAIL_SERVICE_API_KEY=your_email_service_key
@@ -104,7 +96,6 @@ VITE_EMAIL_SERVICE_API_KEY=your_email_service_key
 
 - 📖 **[User Manual](USER_MANUAL.md)** - Complete guide for end users
 - 👨‍💻 **[Developer Manual](DEVELOPER_MANUAL.md)** - Technical documentation for developers
-- 🤖 **[Telegram Bot Setup](TELEGRAM_BOT_READY.md)** - Bot configuration guide
 - 💬 **[Discord Setup](DISCORD_SETUP.md)** - Discord integration guide
 - 🔥 **[Firebase Setup](FIREBASE_SETUP.md)** - Hosting and database setup
 
@@ -162,7 +153,7 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 ```
 greybrain-ai-pulse/
 ├── components/          # React components
-├── services/           # API services (Discord, Telegram, etc.)
+├── services/           # API services (Discord, etc.)
 ├── scripts/           # Automation scripts
 ├── dist/              # Production build
 ├── docs/              # Documentation
@@ -209,6 +200,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   <strong>Built with ❤️ by the GreyBrain Team</strong>
   <br>
   <a href="https://llm-healthcare-insights.web.app">🌐 Visit Live Site</a> •
-  <a href="https://t.me/GreyBrainPulseBot">🤖 Try Telegram Bot</a> •
   <a href="#contributing">🤝 Contribute</a>
 </div>
